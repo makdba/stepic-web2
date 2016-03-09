@@ -12,7 +12,7 @@ class Question(models.Model):
     likes = models.ManyToManyField(User, related_name='questions', blank=True)
 
     def get_absolute_url(self):
-        return reverse('qa.views.question', args=[str(self.id)])
+        return reverse('question', kwargs={"id": self.id})
 
 
 class Answer(models.Model):
