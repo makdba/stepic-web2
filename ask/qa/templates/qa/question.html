@@ -5,3 +5,9 @@
 {% for answer in answers %}
     <div>{{ answer.text }}</div>
 {% endfor %}
+
+<form action="{% url 'answer' %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Submit" />
+</form>

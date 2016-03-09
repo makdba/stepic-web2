@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
-from django.views.decorators.http import require_GET
+from django.http import HttpResponse, HttpResponseRedirect
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import Question, Answer
 from .utils import paginate
+from .forms import AskForm, AnswerForm
 
 
 def test(request, *args, **kwargs):
@@ -23,10 +24,20 @@ def index(request):
 def question(request, id):
     question = get_object_or_404(Question, id=id)
     answers = question.answer_set.all()
+    answer_form = AnswerForm({"question": question.id})
     return render(request, 'qa/question.html', {
         'question': question,
-        'answers': answers
+        'answers': answers,
+        'form': answer_form
     })
+
+@require_POST
+def answer(request):
+    form = AnswerForm(request.POST)
+    if form.is_valid():
+        answer = form.save()
+        question = answer.question
+        return HttpResponseRedirect(question.get_absolute_url())
 
 
 @require_GET
@@ -36,3 +47,14 @@ def popular(request):
         'page': page,
         'paginator': paginator
     })
+
+
+def ask(request):
+    if request.method == "POST":
+        form = AskForm(request.POST)
+        if form.is_valid():
+            question = form.save()
+            return HttpResponseRedirect(question.get_absolute_url())
+    else:
+        form = AskForm()
+    return render(request, 'qa/ask.html', {'form': form})
