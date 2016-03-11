@@ -1,10 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.http import require_GET, require_POST
+from django.contrib.auth import authenticate, login
 
 from .models import Question, Answer
 from .utils import paginate
-from .forms import AskForm, AnswerForm
+from .forms import AskForm, AnswerForm, UserCreationForm
 
 
 def test(request, *args, **kwargs):
@@ -35,9 +36,10 @@ def question(request, id):
 def answer(request):
     form = AnswerForm(request.POST)
     if form.is_valid():
-        answer = form.save()
-        question = answer.question
-        return HttpResponseRedirect(question.get_absolute_url())
+        answer = form.save(commit=False)
+        answer.author = request.user
+        answer.save()
+        return redirect(answer.question)
 
 
 @require_GET
@@ -53,8 +55,37 @@ def ask(request):
     if request.method == "POST":
         form = AskForm(request.POST)
         if form.is_valid():
-            question = form.save()
-            return redirect(question)
+            question = form.save(commit=False)
+            question.author = request.user
+            question.save()
+            return HttpResponseRedirect("/")
     else:
         form = AskForm()
     return render(request, 'qa/ask.html', {'form': form})
+
+
+def signup(request):
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            user = authenticate(
+                username=form.cleaned_data["username"],
+                password=form.cleaned_data["password"]
+            )
+            login(request, user)
+            return HttpResponseRedirect("/")
+    else:
+        form = UserCreationForm()
+    return render(request, 'qa/signup.html', {'form': form})
+
+
+def my_login(request):
+    if request.method == "POST":
+        username = request.POST.get("username", "")
+        password = request.POST.get("password", "")
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return HttpResponseRedirect("/")
+    return render(request, 'qa/login.html')
