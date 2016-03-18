@@ -58,7 +58,9 @@ def ask(request):
             question = form.save(commit=False)
             question.author = request.user
             question.save()
-            return redirect(question)
+            url = question.get_absolute_url()
+            return HttpResponseRedirect(url)
+#            return redirect(question)
     else:
         form = AskForm()
     return render(request, 'qa/ask.html', {'form': form})
